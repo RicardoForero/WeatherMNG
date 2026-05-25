@@ -1,0 +1,4 @@
+"# WeatherMNG" 
+./vscode
+/bin
+.gitignore
