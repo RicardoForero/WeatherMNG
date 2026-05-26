@@ -1,16 +1,15 @@
 package presenter;
 
-import model.SensorData;
-import model.SensorReading;
-import model.JsonParser;
-import model.SensorSerializer;
-import view.IServerView;
-
 import java.io.*;
-import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import model.JsonParser;
+import model.SensorData;
+import model.SensorReading;
+import model.SensorSerializer;
+import model.persistance.FileManager;
+import view.IServerView;
 
 /**
  * Presenter en MVP: orquesta la lógica de aplicación.
@@ -31,7 +30,7 @@ public class ServerPresenter {
 
     // ── Colaboradores ────────────────────────────────────────
     private final IServerView view;
-
+    private FileManager fm;
     // ── Estado ───────────────────────────────────────────────
     private final ConcurrentHashMap<String, SensorData> sensors      = new ConcurrentHashMap<>();
     private final Set<PrintWriter>                       adminWriters = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -40,6 +39,7 @@ public class ServerPresenter {
 
     public ServerPresenter(IServerView view) {
         this.view = view;
+        fm = new FileManager();
     }
 
     // ── Ciclo de vida del servidor ───────────────────────────
@@ -88,6 +88,8 @@ public class ServerPresenter {
     }
 
     public void onSensorReading(SensorData sensor, String rawJson) {
+        System.out.println(fm.buildString(sensor).toString());
+        fm.addSensorData(sensor);
         try {
             SensorReading r = JsonParser.parse(rawJson);
             sensor.pushReading(r.temp(), r.hum());
