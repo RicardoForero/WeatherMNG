@@ -1,14 +1,12 @@
 package view;
 
-import model.SensorMath;
-
-import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
+import javax.swing.*;
 import static model.AppColors.*;
+import model.SensorMath;
 
 /**
  * VISTA — Panel de previsualización meteorológica animada.
@@ -33,6 +31,7 @@ public class WeatherPreview extends JPanel {
     public void update(float temperature, float humidity) {
         this.temperature = temperature;
         this.humidity    = humidity;
+        repaint();
     }
 
     @Override protected void paintComponent(Graphics g) {

@@ -4,12 +4,12 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import model.log.IServerView;
 import model.JsonParser;
 import model.SensorData;
 import model.SensorReading;
 import model.SensorSerializer;
 import model.persistance.FileManager;
-import view.IServerView;
 
 /**
  * Presenter en MVP: orquesta la lógica de aplicación.
@@ -88,8 +88,7 @@ public class ServerPresenter {
     }
 
     public void onSensorReading(SensorData sensor, String rawJson) {
-        System.out.println(fm.buildString(sensor).toString());
-        fm.addSensorData(sensor);
+        fm.addSensorData(sensor,this);
         try {
             SensorReading r = JsonParser.parse(rawJson);
             sensor.pushReading(r.temp(), r.hum());
@@ -158,4 +157,9 @@ public class ServerPresenter {
     public boolean isAdminHandshake(String firstLine) {
         return ADMIN_HELLO.equals(firstLine);
     }
+
+    public void onErrorLog(String context, String message){
+        view.onError(context, message);
+    }
+
 }

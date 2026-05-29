@@ -1,6 +1,4 @@
-package view;
-
-import model.SensorData;
+package model.log;
 
 import java.io.*;
 import java.net.URISyntaxException;
@@ -8,6 +6,7 @@ import java.nio.file.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import model.SensorData;
 
 /**
  * Vista concreta que escribe los eventos del servidor en archivos de log.
@@ -72,9 +71,10 @@ public class FileLogView implements IServerView {
 
     @Override
     public void onReadingReceived(SensorData s) {
-        write("DATA ", String.format("%-15s  T=%5.1f°C  H=%4.0f%%  HI=%5.1f°C  RSSI=%d",
-                s.getName(), s.getTemp(), s.getHum(), s.getHeatIndex(), s.getRssi()));
-    }
+        /*write("DATA ", String.format("%-15s  T=%5.1f°C  H=%4.0f%%  HI=%5.1f°C  RSSI=%d",
+           s.getName(), s.getTemp(), s.getHum(), s.getHeatIndex(), s.getRssi()));
+     */    
+     }
 
     @Override
     public void onSensorStale(SensorData s) {

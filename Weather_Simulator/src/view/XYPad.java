@@ -1,12 +1,10 @@
 package view;
 
-import model.SensorMath;
-
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-
+import javax.swing.*;
 import static model.AppColors.*;
+import model.SensorMath;
 
 /**
  * VISTA — Panel XY: mueve el cursor para cambiar temperatura (X) y humedad (Y).
@@ -45,6 +43,7 @@ public class XYPad extends JPanel {
                 float t = -10 + cursorX * 60f;
                 float h = 100 - cursorY * 100f;
                 if (onMove != null) onMove.call(t, h);
+                repaint();
             }
         };
         addMouseListener(ma);

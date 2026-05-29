@@ -1,10 +1,8 @@
 package presenter;
 
+import model.log.FileLogView;
+import model.log.IServerView;
 import model.TcpServer;
-import view.ConsoleView;
-import view.FileLogView;
-import view.IServerView;
-import view.CompositeView;
 
 
 /**
@@ -44,10 +42,7 @@ import view.CompositeView;
 public class WeatherServer {
  
       public static void main(String[] args) {
-        IServerView view = new CompositeView(
-                new ConsoleView(),
-                new FileLogView()
-        );
+        IServerView view = new FileLogView();
         ServerPresenter presenter = new ServerPresenter(view);
         TcpServer       server    = new TcpServer(presenter);
  

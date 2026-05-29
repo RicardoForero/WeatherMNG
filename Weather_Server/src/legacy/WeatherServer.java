@@ -130,7 +130,8 @@ public class WeatherServer {
     /* ── Bucle principal de aceptación ──────────────────── */
     void startAcceptLoop() {
         try {
-            serverSocket = new ServerSocket(PORT);
+            InetAddress direccionEnlace = InetAddress.getByName("0.0.0.0");
+            serverSocket = new ServerSocket(PORT, 50, direccionEnlace);
             log("✓ Servidor activo en :" + PORT);
             log("  Protocolo: primera línea = \"" + ADMIN_HELLO + "\" → Admin | JSON → Sensor");
 

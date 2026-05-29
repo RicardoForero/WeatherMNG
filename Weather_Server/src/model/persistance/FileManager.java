@@ -5,8 +5,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
-
 import model.SensorData;
+import model.SensorHandler;
+import presenter.ServerPresenter;
 
 public class FileManager {
 
@@ -16,12 +17,11 @@ public class FileManager {
      * @param nombreArchivo Nombre del archivo o ruta relativa (ej: "salida.txt" o "data/logs.txt")
      * @param mensaje       Contenido a escribir dentro del archivo
      */
-    public static void writeFile(String nombreArchivo, String mensaje) {
+    public static void writeFile(String nombreArchivo, String mensaje, ServerPresenter presenter ) {
         try (FileWriter writer = new FileWriter(nombreArchivo, false)) {
             writer.write(mensaje);
-            System.out.println("Archivo sobrescrito en: " + nombreArchivo);
         } catch (IOException e) {
-            System.err.println("Error al escribir el archivo: " + e.getMessage());
+            presenter.onErrorLog("Persistance Error", "Error al generar o sobreescribir el archivo "+ e.getMessage());
         }
     }
 
@@ -31,13 +31,13 @@ public class FileManager {
      *
      * @param nombreArchivo Nombre del archivo o ruta relativa (ej: "log.txt" o "output/registro.txt")
      * @param mensaje       Texto que se añadirá al archivo
+     * @param presenter Presenter para servir de puente para logs en archivo
      */
-    public static void addContent(String nombreArchivo, String mensaje) {
+    public static void addContent(String nombreArchivo, String mensaje, ServerPresenter presenter) {
         try (FileWriter writer = new FileWriter(nombreArchivo, true)) {
             writer.write(mensaje + System.lineSeparator());
-            System.out.println("Contenido agregado en: " + nombreArchivo);
         } catch (IOException e) {
-            System.err.println("Error al agregar contenido al archivo: " + e.getMessage());
+            presenter.onErrorLog("Persistance Error", "Error al agregar contenido al archivo: " + e.getMessage());
         }
     }
     public static boolean verifyFile(String rutaArchivo) {
@@ -45,7 +45,7 @@ public class FileManager {
         return archivo.exists();
     }
 
-    public static void addSensorData(SensorData s) {
+    public static void addSensorData(SensorData s, ServerPresenter presenter) {
     File dir = new File("files");
     if (!dir.exists()) {
         dir.mkdirs(); // crea la carpeta si no existe
@@ -54,9 +54,9 @@ public class FileManager {
     String ruta = "files/" + s.getName() + ".txt";
 
     if (!verifyFile(ruta)) {
-        writeFile(ruta, buildString(s).toString());
+        writeFile(ruta, buildString(s).toString(), presenter);
     } else {
-        addContent(ruta, buildString(s).toString());
+        addContent(ruta, buildString(s).toString(), presenter);
     }
 }
     public static StringBuilder buildString(SensorData s){
@@ -69,5 +69,8 @@ public class FileManager {
       .append(" | Heat Index: ").append(s.getHeatIndex());
     return sb;
 }
+    public static void onError(SensorHandler s){
+        
+    }
 
 }

@@ -2,6 +2,8 @@ package model;
 
 import java.util.*;
 
+import custom.CustomList;
+
 /**
  * Entidad de dominio pura: representa el estado de un sensor ESP32.
  * Sin dependencias de red ni de presentación.
@@ -21,8 +23,8 @@ public class SensorData {
     private volatile boolean online    = true;
     private volatile long    lastSeen  = System.currentTimeMillis();
 
-    private final List<Float> histTemp = Collections.synchronizedList(new ArrayList<>());
-    private final List<Float> histHum  = Collections.synchronizedList(new ArrayList<>());
+    private final List<Float> histTemp = Collections.synchronizedList(new CustomList<>());
+    private final List<Float> histHum  = Collections.synchronizedList(new CustomList<>());
 
     private static final int MAX_HISTORY = 80;
 
@@ -70,11 +72,11 @@ public class SensorData {
     public long    getLastSeen()  { return lastSeen; }
 
     public List<Float> getHistTemp() {
-        synchronized (histTemp) { return new ArrayList<>(histTemp); }
+        synchronized (histTemp) { return new CustomList<>(histTemp); }
     }
 
     public List<Float> getHistHum() {
-        synchronized (histHum) { return new ArrayList<>(histHum); }
+        synchronized (histHum) { return new CustomList<>(histHum); }
     }
 
     // ── Setters controlados ──────────────────────────────────

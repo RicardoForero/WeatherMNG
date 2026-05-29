@@ -1,13 +1,10 @@
 package view;
 
-import model.AppColors;
-import model.SensorMath;
-
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-
+import javax.swing.*;
 import static model.AppColors.*;
+import model.SensorMath;
 
 /**
  * VISTA — Knob giratorio con arrastre y scroll.
@@ -63,6 +60,7 @@ public class DragKnob extends JPanel {
                     dragStartVal - (dragStartX - e.getX()) * (max - min) / 200f, min, max);
                 setValue(newVal);
                 if (onValueChange != null) onValueChange.call(value);
+                repaint();
             }
         });
 
@@ -70,6 +68,7 @@ public class DragKnob extends JPanel {
             setValue(SensorMath.clamp(
                 value + (max - min) * 0.01f * (float)(-e.getPreciseWheelRotation()), min, max));
             if (onValueChange != null) onValueChange.call(value);
+            repaint();
         });
     }
 

@@ -1,4 +1,4 @@
-package view;
+package model.log;
 
 import model.SensorData;
 

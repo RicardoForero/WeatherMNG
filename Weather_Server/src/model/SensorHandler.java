@@ -1,9 +1,8 @@
 package model;
 
-import presenter.ServerPresenter;
-
 import java.io.*;
 import java.net.Socket;
+import presenter.ServerPresenter;
 
 /**
  * Handler de red para clientes Sensor (ESP32).
@@ -45,7 +44,7 @@ public class SensorHandler implements Runnable {
                 if (!trimmed.isEmpty()) presenter.onSensorReading(sensor, trimmed);
             }
         } catch (IOException e) {
-            // error de red no crítico, ignorado
+            presenter_onError("IO", e.getMessage());
         } finally {
             presenter.onSensorDisconnected(sensor);
             closeQuietly();
@@ -53,8 +52,8 @@ public class SensorHandler implements Runnable {
     }
 
     // Método puente para errores de red no críticos
-    private void presenter_onError(String msg) {
-        // Acceso limitado: solo log; evita romper la abstracción
+    private void presenter_onError(String context,String msg) {
+       presenter.onErrorLog(context, msg);
     }
 
     private void closeQuietly() {

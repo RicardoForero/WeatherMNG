@@ -1,12 +1,10 @@
 package view;
 
-import model.SensorMath;
-
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-
+import javax.swing.*;
 import static model.AppColors.*;
+import model.SensorMath;
 
 /**
  * VISTA — Slider vertical con animación suave.
@@ -50,6 +48,7 @@ public class VSlider extends JPanel {
                 float nv = SensorMath.clamp(min + p * (max - min), min, max);
                 setValue(nv);
                 if (onValueChange != null) onValueChange.call(value);
+                repaint();
             }
         };
         addMouseListener(ma);
