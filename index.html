@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Riego · Panel Admin</title>
+  <style>
+    :root {
+      --bg: #f4f6f3;
+      --card: #fff;
+      --tx: #1b2a1f;
+      --mu: #6b7a6f;
+      --ac: #2f8f4e;
+      --ln: #dfe5dc;
+      --ok: #2f8f4e;
+      --lo: #d9822b;
+      --hi: #2b78d9;
+      --bad: #c93c3c
+    }
+
+    @media(prefers-color-scheme:dark) {
+      :root {
+        --bg: #0f1511;
+        --card: #18211b;
+        --tx: #e6efe8;
+        --mu: #8b9a8f;
+        --ac: #4cc275;
+        --ln: #263229;
+        --ok: #4cc275;
+        --lo: #f0a04b;
+        --hi: #5da2f5;
+        --bad: #f06a6a
+      }
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--tx);
+      font: 15px system-ui, sans-serif
+    }
+
+    header.top {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--card);
+      border-bottom: 1px solid var(--ln)
+    }
+
+    header.top h1 {
+      font-size: 17px;
+      margin: 0;
+      flex: 1
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--bad);
+      display: inline-block;
+      margin-right: 6px
+    }
+
+    .dot.on {
+      background: var(--ok)
+    }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+      border: 1px solid var(--ln);
+      background: var(--card);
+      color: var(--tx);
+      border-radius: 8px;
+      padding: 6px 12px
+    }
+
+    button:disabled {
+      opacity: .4;
+      cursor: not-allowed
+    }
+
+    main {
+      padding: 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--ln);
+      border-radius: 14px;
+      padding: 14px
+    }
+
+    .card.off {
+      opacity: .6
+    }
+
+    .card header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 16px;
+      cursor: pointer
+    }
+
+    small {
+      color: var(--mu)
+    }
+
+    .pill {
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: var(--bad);
+      color: #fff
+    }
+
+    .pill.on {
+      background: var(--ok)
+    }
+
+    .env {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin: 12px 0 4px;
+      text-align: center
+    }
+
+    .env b {
+      font-size: 18px;
+      display: block
+    }
+
+    .spark {
+      width: 100%;
+      height: 28px
+    }
+
+    .spark polyline {
+      fill: none;
+      stroke: var(--ac);
+      stroke-width: 1.5;
+      vector-effect: non-scaling-stroke
+    }
+
+    .slots {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px
+    }
+
+    .slot {
+      border: 1px solid var(--ln);
+      border-radius: 10px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px
+    }
+
+    .slot select {
+      width: 100%;
+      font: inherit;
+      background: var(--bg);
+      color: var(--tx);
+      border: 1px solid var(--ln);
+      border-radius: 6px;
+      padding: 4px
+    }
+
+    .bar {
+      position: relative;
+      height: 10px;
+      background: var(--bg);
+      border-radius: 6px;
+      overflow: hidden
+    }
+
+    .bar u {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      background: var(--ok);
+      opacity: .22
+    }
+
+    .bar i {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      background: var(--ok);
+      border-radius: 6px
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 4px
+    }
+
+    .row b {
+      font-size: 17px
+    }
+
+    .st {
+      font-size: 12px;
+      font-weight: 600
+    }
+
+    .ok {
+      color: var(--ok)
+    }
+
+    .lo {
+      color: var(--lo)
+    }
+
+    .hi {
+      color: var(--hi)
+    }
+
+    .bar i.lo {
+      background: var(--lo)
+    }
+
+    .bar i.hi {
+      background: var(--hi)
+    }
+
+    .empty {
+      grid-column: 1/-1;
+      text-align: center;
+      color: var(--mu);
+      padding: 48px 0
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--tx);
+      color: var(--bg);
+      padding: 8px 16px;
+      border-radius: 8px;
+      opacity: 0;
+      transition: .2s;
+      pointer-events: none
+    }
+
+    #toast.show {
+      opacity: 1
+    }
+
+    #login {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: none;
+      place-items: center;
+      z-index: 10
+    }
+
+    #login div {
+      background: var(--card);
+      border: 1px solid var(--ln);
+      padding: 24px;
+      border-radius: 14px;
+      display: grid;
+      gap: 12px;
+      width: min(320px, 90vw)
+    }
+
+    #login input {
+      font: inherit;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid var(--ln);
+      background: var(--bg);
+      color: var(--tx)
+    }
+  </style>
+</head>
+
+<body>
+  <div id="login">
+    <div>
+      <h2 style="cursor:default">🌱 Panel de riego</h2><input id="pw" type="password" placeholder="Contraseña"
+        autocomplete="current-password"><button id="go">Entrar</button><small id="lerr"></small>
+    </div>
+  </div>
+  <header class="top">
+    <h1>🌱 Panel de riego</h1><span><i class="dot" id="dot"></i><small id="lk">conectando…</small></span><button id="rc"
+      title="Recargar catálogo de plantas (plantas.xlsx)">↻ Catálogo</button>
+  </header>
+  <div id="diag"
+    style="display:none;margin:12px 16px 0;padding:10px 14px;border-radius:10px;background:var(--bad);color:#fff"></div>
+  <main id="grid">
+    <div class="empty" id="empty">Sin dispositivos conectados</div>
+  </main>
+  <div id="toast"></div>
+  <script>
+    const $ = s => document.querySelector(s), cards = new Map(); let catalog = {}, es;
+    const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200) };
+    async function cmd(o) { try { const r = await fetch('/api/cmd', { method: 'POST', body: JSON.stringify(o) }); if (r.status === 401) return showLogin(); toast(r.ok ? 'Comando enviado' : 'Error: ' + await r.text()) } catch { toast('Sin conexión con el gateway') } }
+    function showLogin() { $('#login').style.display = 'grid'; $('#pw').focus() }
+  async function login(e) {
+  if (e) e.preventDefault(); // Evita recargas si está dentro de un form
+  
+  const passwordVal = $('#pw').value;
+  console.log("Enviando contraseña:", passwordVal); // Útil para depurar en consola
+
+  try {
+    const r = await fetch('/api/login', { 
+      method: 'POST', 
+      headers: {
+        'Content-Type': 'text/plain;charset=UTF-8'
+      },
+      body: passwordVal 
+    }); 
+
+    if (r.ok) { 
+      $('#login').style.display = 'none'; 
+      start(); 
+    } else {
+      $('#lerr').textContent = 'Contraseña incorrecta'; 
+    }
+  } catch (error) {
+    console.error("Error de red al intentar conectar con el login:", error);
+  }
+}
+
+// Asegurar eventos correctamente
+$('#go').onclick = (e) => login(e); 
+$('#pw').onkeydown = (e) => { 
+  if (e.key === 'Enter') login(e); 
+};    let linkUp = false, watch;
+    const diag = m => { const d = $('#diag'); d.style.display = m ? 'block' : 'none'; d.textContent = m || '' };
+    const emptyMsg = () => { $('#empty').textContent = linkUp ? 'Servidor en línea, pero ningún ESP32 o simulador está conectado todavía' : 'Sin conexión con el servidor de riego' };
+    window.addEventListener('error', e => diag('Error de JavaScript: ' + e.message + ' (línea ' + e.lineno + ')'));
+    async function why() {
+      try {
+        const j = await (await fetch('/api/status', { cache: 'no-store' })).json();
+        diag(j.tcp === 'up' ? 'El gateway y el servidor de riego responden, pero el flujo en vivo no llega al navegador. Recarga con Ctrl+F5 y prueba sin extensiones, VPN ni proxy.'
+          : 'El gateway funciona, pero no logra conectar con el servidor de riego (' + j.tcp.replace('down:', '') + '). Revisa que Weather_Server esté en marcha y que TCP_HOST y TCP_PORT sean correctos.')
+      }
+      catch { diag('El navegador no logra hablar con el gateway. Revisa que siga ejecutándose y la dirección de la página.') }
+    }
+    function start() {
+      if (es) es.close(); clearTimeout(watch); linkUp = false; $('#lk').textContent = 'conectando…';
+      watch = setTimeout(() => { if (!linkUp) why() }, 6000); es = new EventSource('/api/stream');
+      es.addEventListener('link', e => {
+        linkUp = e.data === 'up'; clearTimeout(watch); $('#dot').classList.toggle('on', linkUp);
+        $('#lk').textContent = linkUp ? 'servidor en línea' : 'servidor de riego sin conexión'; if (linkUp) diag(''); else why(); emptyMsg()
+      });
+      es.onmessage = e => handle(JSON.parse(e.data));
+      es.onerror = () => {
+        linkUp = false; $('#dot').classList.remove('on'); $('#lk').textContent = 'reconectando…'; emptyMsg();
+        fetch('/api/login', { cache: 'no-store' }).then(r => r.status === 401 ? showLogin() : why()).catch(why)
+      }
+    }
+    function handle(m) {
+      if (m.type === 'catalog') { catalog = {}; m.plants.forEach(p => catalog[p.key] = p); cards.forEach(c => fillOpts(c)); cards.forEach(c => c._s && paint(c._s)) }
+      else if (m.type === 'snapshot') { const ids = new Set(m.sensors.map(s => s.id)); cards.forEach((c, id) => !ids.has(id) && drop(id)); m.sensors.forEach(paint) }
+      else if (m.type === 'update') paint(m.sensor);
+      else if (m.type === 'remove') drop(m.id)
+    }
+    function drop(id) { const c = cards.get(id); if (c) { c.remove(); cards.delete(id) } $('#empty').style.display = cards.size ? 'none' : '' }
+    function fillOpts(c) { c.querySelectorAll('select').forEach(sel => { const v = sel.value; sel.replaceChildren(new Option('— vacío —', ''), ...Object.keys(catalog).sort().map(k => new Option(k, k))); sel.value = v }) }
+    function mk(id) {
+      const c = document.createElement('article'); c.className = 'card';
+      c.innerHTML = `<header><div><h2 title="Clic para renombrar"></h2><small class="ip"></small></div><span class="pill"></span></header>
+ <div class="env"><div><b class="t">–</b><small>°C</small></div><div><b class="h">–</b><small>% HR</small></div><div><b class="hi">–</b><small>sens.</small></div><div><b class="rs">–</b><small>dBm</small></div></div>
+ <svg class="spark" viewBox="0 0 100 24" preserveAspectRatio="none"><polyline/></svg>
+ <div class="slots">${[0, 1, 2, 3].map(i => `<section class="slot" data-s="${i}"><select></select><div class="bar"><u></u><i></i></div><div class="row"><b class="v">–</b><span class="st"></span></div><small class="lw"></small><button>💧 Regar</button></section>`).join('')}</div>`;
+      c.querySelector('h2').onclick = () => { const n = prompt('Nuevo nombre del dispositivo:', c._s.name); n && n.trim() && cmd({ cmd: 'rename', id, name: n.trim() }) };
+      c.querySelectorAll('.slot').forEach(sl => {
+        const s = +sl.dataset.s;
+        sl.querySelector('select').onchange = e => cmd({ cmd: 'assignPlant', id, slot: s, plantKey: e.target.value });
+        sl.querySelector('button').onclick = () => cmd({ cmd: 'water', id, slot: s })
+      });
+      fillOpts(c); cards.set(id, c); $('#grid').append(c); $('#empty').style.display = 'none'; return c
+    }
+    const ago = ms => { if (!ms) return 'nunca regada'; const m = Math.round((Date.now() - ms) / 60000); return 'regada ' + (m < 1 ? 'ahora' : m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.round(m / 60)} h` : `hace ${Math.round(m / 1440)} d`) };
+    function paint(s) {
+      const c = cards.get(s.id) || mk(s.id), q = x => c.querySelector(x); c._s = s;
+      c.classList.toggle('off', !s.online); q('h2').textContent = s.name;
+      q('.ip').textContent = `${s.ip} · activo ${Math.floor(s.uptime / 60)} min`;
+      const p = q('.pill'); p.textContent = s.online ? 'en línea' : 'sin señal'; p.classList.toggle('on', s.online);
+      q('.t').textContent = s.temp.toFixed(1); q('.h').textContent = s.hum.toFixed(0); q('.hi').textContent = s.heatIndex.toFixed(1); q('.rs').textContent = s.rssi;
+      const h = s.histTemp; if (h.length > 1) { const lo = Math.min(...h), hi = Math.max(...h), r = hi - lo || 1; q('polyline').setAttribute('points', h.map((v, i) => `${(i / (h.length - 1) * 100).toFixed(1)},${(22 - (v - lo) / r * 20).toFixed(1)}`).join(' ')) }
+      s.plants.forEach(pl => {
+        const sl = c.querySelector(`.slot[data-s="${pl.slot}"]`); if (!sl) return;
+        const sel = sl.querySelector('select'), sp = catalog[pl.plantKey], empty = !pl.plantKey;
+        if (!empty && ![...sel.options].some(o => o.value === pl.plantKey)) sel.add(new Option(pl.plantKey, pl.plantKey));
+        if (document.activeElement !== sel) sel.value = pl.plantKey;
+        const bar = sl.querySelector('i'), zone = sl.querySelector('u'), st = sl.querySelector('.st');
+        sl.querySelector('.v').textContent = empty ? '–' : pl.hum.toFixed(0) + '%'; bar.style.width = (empty ? 0 : Math.min(100, pl.hum)) + '%';
+        let cls = '', tx = ''; if (!empty && sp) {
+          zone.style.left = sp.humMin + '%'; zone.style.width = (sp.humMax - sp.humMin) + '%';
+          if (pl.hum < sp.humMin) { cls = 'lo'; tx = 'Seca' } else if (pl.hum > sp.humMax) { cls = 'hi'; tx = 'Exceso' } else { cls = 'ok'; tx = 'Óptima' }
+        } else zone.style.width = 0;
+        bar.className = cls; st.className = 'st ' + cls; st.textContent = tx;
+        sl.querySelector('.lw').textContent = empty ? 'slot libre' : ago(pl.lastWatered);
+        sl.querySelector('button').disabled = empty || !s.online
+      })
+    }
+    fetch('/api/login').then(r => r.ok ? start() : showLogin());
+  </script>
+</body>
+
+</html>

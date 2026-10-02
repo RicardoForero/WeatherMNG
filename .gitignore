@@ -1,0 +1,7 @@
+.vscode/
+bin/
+sim-state/
+*.log
+*.class
+*.jar
+*.env
