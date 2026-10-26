@@ -21,7 +21,7 @@ public class WebGateway {
     static final String TCP_HOST = env("TCP_HOST", "127.0.0.1");
     static final int TCP_PORT = Integer.parseInt(env("TCP_PORT", "2361"));
     static final int HTTP_PORT = Integer.parseInt(env("HTTP_PORT", "8080"));
-    static final String PASS = env("ADMIN_PASSWORD", "");
+    static final String PASS = env("ADMIN_PASSWORD", "12345678");
     static final Map<String, Long> sessions = new ConcurrentHashMap<>();
     static final SecureRandom RNG = new SecureRandom();
     static boolean https = false;
@@ -43,6 +43,7 @@ public class WebGateway {
             try (InputStream in = Files.newInputStream(Path.of(ks))) { k.load(in, pw); }
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             kmf.init(k, pw);
+
             SSLContext ctx = SSLContext.getInstance("TLS");
             ctx.init(kmf.getKeyManagers(), null, null);
             HttpsServer hs = HttpsServer.create(new InetSocketAddress(HTTP_PORT), 0);

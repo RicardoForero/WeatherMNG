@@ -56,26 +56,26 @@
 
 // ── Credenciales WiFi (modifica aquí o usa config.h) ──────────────────
 #ifndef WIFI_SSID
-  #define WIFI_SSID   "WIFI-UPTC"
+  #define WIFI_SSID   "CLARO-B750"
   // Ricardo Forero
   // CLARO-B750
 #endif
 #ifndef WIFI_PASS
-  #define WIFI_PASS   ""
+  #define WIFI_PASS   "ueUFhJk9cG"
   // 1002460231
   // ueUFhJk9cG
 #endif
 
 // ── Servidor ───────────────────────────────────────────────────────────
 #ifndef SERVER_HOST
-  #define SERVER_HOST "10.200.37.20"   // IP del PC donde corre WeatherServer
+  #define SERVER_HOST "192.168.128.11"   // IP del PC donde corre WeatherServer
   // 192.168.1.12
   // 192.168.128.15
 #endif
 #ifndef SERVER_PORT
   #define SERVER_PORT 2361
 #endif
-
+8
 // ── Pines de hardware ──────────────────────────────────────────────────
 #define DHT_PIN        4
 #define DHT_TYPE       DHT11          // o DHT11
