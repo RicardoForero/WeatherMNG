@@ -101,7 +101,6 @@ public class ServerPresenter {
     }
 
     public void onSensorReading(SensorData sensor, String rawJson) {
-        fm.addSensorData(sensor,this);
         try {
             SensorReading r = JsonParser.parse(rawJson);
             sensor.pushReading(r.temp(), r.hum());
@@ -111,10 +110,15 @@ public class ServerPresenter {
             sensor.setName(r.deviceName());
             applyPlantReadings(sensor, rawJson);
             totalMessages.incrementAndGet();
+
+            // Guardar en el log de texto individual del dispositivo (con ambiente y 4 slots actualizados)
+            fm.addSensorData(sensor, this);
+
             view.onReadingReceived(sensor);
             broadcastSensorUpdate(sensor);
         } catch (Exception e) {
-            view.onError(sensor.ip, "JSON inválido: " + rawJson.substring(0, Math.min(40, rawJson.length())));
+            String preview = rawJson.length() > 40 ? rawJson.substring(0, 40) + "..." : rawJson;
+            view.onError(sensor.ip, "JSON inválido: " + preview + " (" + e.getMessage() + ")");
         }
     }
 
@@ -122,7 +126,7 @@ public class ServerPresenter {
     private void applyPlantReadings(SensorData sensor, String rawJson) {
         List<JsonParser.PlantReading> readings = JsonParser.parsePlants(rawJson);
         for (JsonParser.PlantReading r : readings) {
-            sensor.pushPlantReading(r.slot(), r.plantKey(), r.humidity());
+            sensor.pushPlantReading(r.slot(), r.plantKey(), r.humidity(), r.lastWatered());
         }
     }
 
@@ -213,6 +217,7 @@ public class ServerPresenter {
         sensor.sendCommand(cmdJson);
 
         view.log("Admin asignó planta '" + plantKey + "' al slot " + slot + " de " + sensor.id);
+        fm.addSensorData(sensor, this);
         broadcastSensorUpdate(sensor);
     }
 
@@ -229,6 +234,7 @@ public class ServerPresenter {
         ps.setLastWatered(System.currentTimeMillis());
         sensor.sendCommand(String.format(java.util.Locale.ROOT, "{\"cmd\":\"water\",\"slot\":%d}", slot));
         view.log("Admin regó manualmente el slot " + slot + " (" + ps.getPlantKey() + ") de " + sensor.id);
+        fm.addSensorData(sensor, this);
         broadcastSensorUpdate(sensor);
     }
 

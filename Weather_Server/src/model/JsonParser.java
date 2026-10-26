@@ -4,15 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Parseo JSON mínimo sin dependencias externas.
- * Responsabilidad única: texto de red → SensorReading.
+ * Parseo JSON ligero y resiliente sin dependencias externas.
+ * Responsabilidad única: texto de red → SensorReading y PlantReading.
  */
 public class JsonParser {
 
     private JsonParser() {}
 
     /** Lectura cruda de un slot de planta, extraída del array "plantas". */
-    public record PlantReading(int slot, String plantKey, float humidity) {}
+    public record PlantReading(int slot, String plantKey, float humidity, long lastWatered) {}
 
     public static SensorReading parse(String json) {
         float  temp      = parseFloat(json, "temperatura");
@@ -57,7 +57,9 @@ public class JsonParser {
         if ("N/A".equals(key)) key = "";
         float hum = parseFloat(obj, "humedad");
         if (Float.isNaN(hum)) hum = 0f;
-        return new PlantReading(slot, key, hum);
+        long lastWatered = parseLong(obj, "regadoEn");
+        if (lastWatered <= 0) lastWatered = parseLong(obj, "lastWatered");
+        return new PlantReading(slot, key, hum, Math.max(0, lastWatered));
     }
 
     /** Devuelve el índice del '[' que abre el array para la clave dada, o -1 si no existe. */
@@ -73,12 +75,29 @@ public class JsonParser {
 
     public static float parseFloat(String j, String k) {
         String s = parseStr(j, k);
-        return "N/A".equals(s) ? Float.NaN : Float.parseFloat(s);
+        try {
+            return "N/A".equals(s) ? Float.NaN : Float.parseFloat(s);
+        } catch (Exception e) {
+            return Float.NaN;
+        }
     }
 
     public static int parseInt(String j, String k) {
         String s = parseStr(j, k);
-        return "N/A".equals(s) ? 0 : (int) Float.parseFloat(s);
+        try {
+            return "N/A".equals(s) ? 0 : (int) Float.parseFloat(s);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    public static long parseLong(String j, String k) {
+        String s = parseStr(j, k);
+        try {
+            return "N/A".equals(s) ? 0L : (long) Double.parseDouble(s);
+        } catch (Exception e) {
+            return 0L;
+        }
     }
 
     public static String parseStr(String json, String key) {

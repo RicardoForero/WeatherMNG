@@ -6,19 +6,21 @@ import java.nio.file.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import model.PlantSlot;
 import model.SensorData;
 
 /**
- * Vista concreta que escribe los eventos del servidor en archivos de log.
+ * Vista concreta que escribe los eventos del servidor tanto en archivos de log diarios
+ * como en la consola estándar (System.out / System.err) para máxima observabilidad.
  *
- * Ubicación: <directorio_del_jar>/logs/weather-YYYY-MM-DD.log
+ * Ubicación del archivo: logs/weather-YYYY-MM-DD.log (resuelto inteligentemente).
  *
  * Características:
- *  - Rotación diaria automática: al cambiar de día se abre un nuevo archivo.
- *  - Escritura con BufferedWriter para minimizar syscalls.
+ *  - Rotación diaria automática de archivos.
+ *  - Salida simultánea a archivo y consola con timestamps formateados.
  *  - Thread-safe mediante sincronización en el writer.
  *  - Cierre limpio registrado como shutdown hook.
- *  - Puede combinarse con ConsoleView en un CompositeView.
  */
 public class FileLogView implements IServerView {
 
@@ -31,21 +33,12 @@ public class FileLogView implements IServerView {
     private BufferedWriter writer;
     private LocalDate      currentDay;
 
-    // ── Constructor ───────────────────────────────────────────
+    // ── Constructores ─────────────────────────────────────────
 
-    /**
-     * Crea el FileLogView resolviendo la carpeta {@code logs/} junto al JAR/clase principal.
-     * Si la resolución falla, usa el directorio de trabajo actual como fallback.
-     */
     public FileLogView() {
         this(resolveLogsDir());
     }
 
-    /**
-     * Constructor explícito para tests o despliegues con ruta personalizada.
-     *
-     * @param logsDir ruta absoluta de la carpeta de logs
-     */
     public FileLogView(Path logsDir) {
         this.logsDir = logsDir;
         openWriter();
@@ -56,66 +49,91 @@ public class FileLogView implements IServerView {
 
     @Override
     public void log(String message) {
-        write("INFO ", message);
+        write("INFO ", message, false);
     }
 
     @Override
     public void onSensorConnected(SensorData s, int total) {
-        write("CONN ", String.format("Sensor conectado: %s (%s) | Total: %d", s.getName(), s.ip, total));
+        write("CONN ", String.format(Locale.ROOT, "Sensor conectado: %s (%s) | Total activos: %d", s.getName(), s.ip, total), false);
     }
 
     @Override
     public void onSensorDisconnected(SensorData s, int active) {
-        write("DISC ", String.format("Sensor desconectado: %s (%s) | Activos: %d", s.getName(), s.ip, active));
+        write("DISC ", String.format(Locale.ROOT, "Sensor desconectado: %s (%s) | Restantes activos: %d", s.getName(), s.ip, active), false);
     }
 
     @Override
     public void onReadingReceived(SensorData s) {
-        /*write("DATA ", String.format("%-15s  T=%5.1f°C  H=%4.0f%%  HI=%5.1f°C  RSSI=%d",
-           s.getName(), s.getTemp(), s.getHum(), s.getHeatIndex(), s.getRssi()));
-     */    
-     }
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format(Locale.ROOT, "%-16s T=%5.1f°C  H=%4.0f%%  HI=%5.1f°C  RSSI=%4d dBm",
+                s.getName(), s.getTemp(), s.getHum(), s.getHeatIndex(), s.getRssi()));
+        sb.append(" | Slots: [");
+        PlantSlot[] plants = s.getPlants();
+        for (int i = 0; i < plants.length; i++) {
+            if (i > 0) sb.append(", ");
+            PlantSlot ps = plants[i];
+            if (ps.isEmpty()) {
+                sb.append("S").append(i).append(": libre");
+            } else {
+                sb.append("S").append(i).append(": ").append(ps.getPlantKey())
+                  .append(String.format(Locale.ROOT, "(%.0f%%)", ps.getHumidity()));
+            }
+        }
+        sb.append("]");
+        write("DATA ", sb.toString(), false);
+    }
 
     @Override
     public void onSensorStale(SensorData s) {
-        write("WARN ", "Sin respuesta: " + s.getName() + " (" + s.ip + ")");
+        write("WARN ", "Sensor sin respuesta (stale): " + s.getName() + " (" + s.ip + ")", true);
     }
 
     @Override
     public void onAdminConnected(String ip, int total) {
-        write("ADMN ", "Admin conectado: " + ip + " | Total admins: " + total);
+        write("ADMN ", "Admin conectado: " + ip + " | Total admins: " + total, false);
     }
 
     @Override
     public void onAdminDisconnected(String ip, int remaining) {
-        write("ADMN ", "Admin desconectado: " + ip + " | Restantes: " + remaining);
+        write("ADMN ", "Admin desconectado: " + ip + " | Restantes: " + remaining, false);
     }
 
     @Override
     public void onError(String context, String message) {
-        write("ERR  ", "[" + context + "] " + message);
+        write("ERR  ", "[" + context + "] " + message, true);
     }
 
     @Override
     public void onServerStarted(int port) {
-        write("BOOT ", "Servidor iniciado en puerto " + port);
-        write("BOOT ", "Logs en: " + logsDir.toAbsolutePath());
+        write("BOOT ", "Servidor Weather_Server iniciado exitosamente en puerto TCP " + port, false);
+        write("BOOT ", "Directorio de logs activos: " + logsDir.toAbsolutePath(), false);
     }
 
-    // ── Escritura con rotación diaria ─────────────────────────
+    // ── Escritura simultánea (Archivo + Consola) ───────────────
 
     /**
-     * Escribe una línea formateada con nivel y timestamp.
-     * Rota el archivo si cambió el día desde la última escritura.
+     * Escribe una línea formateada con nivel y timestamp tanto en el log diario como en consola.
      */
-    private synchronized void write(String level, String message) {
+    private synchronized void write(String level, String message, boolean isError) {
+        String line = buildLine(level, message);
+
+        // 1. Salida a consola interactiva
+        if (isError) {
+            System.err.println(line);
+        } else {
+            System.out.println(line);
+        }
+
+        // 2. Salida al archivo de log diario
         try {
-            rotatIfNeeded();
-            writer.write(buildLine(level, message));
-            writer.newLine();
-            writer.flush();
+            rotateIfNeeded();
+            if (writer != null) {
+                writer.write(line);
+                writer.newLine();
+                writer.flush();
+            }
         } catch (IOException e) {
-            System.err.println("[FileLogView] Error al escribir log: " + e.getMessage());
+            System.err.println("[FileLogView] Error al escribir archivo de log: " + e.getMessage());
         }
     }
 
@@ -124,7 +142,7 @@ public class FileLogView implements IServerView {
     }
 
     /** Abre un nuevo archivo si el día actual difiere del que se abrió. */
-    private void rotatIfNeeded() throws IOException {
+    private void rotateIfNeeded() throws IOException {
         LocalDate today = LocalDate.now();
         if (!today.equals(currentDay)) {
             closeQuietly();
@@ -133,7 +151,7 @@ public class FileLogView implements IServerView {
         }
     }
 
-    // ── Gestión del writer ────────────────────────────────────
+    // ── Gestión del BufferedWriter ────────────────────────────
 
     private void openWriter() {
         try {
@@ -141,31 +159,31 @@ public class FileLogView implements IServerView {
             currentDay = LocalDate.now();
             openWriterForDay(currentDay);
         } catch (IOException e) {
-            System.err.println("[FileLogView] No se pudo crear la carpeta de logs: " + e.getMessage());
+            System.err.println("[FileLogView] No se pudo inicializar la carpeta de logs: " + e.getMessage());
         }
     }
 
     private void openWriterForDay(LocalDate day) throws IOException {
         String filename = "weather-" + day.format(DATE_FMT) + ".log";
-        Path   logFile  = logsDir.resolve(filename);
+        Path logFile = logsDir.resolve(filename);
 
-        // append=true para no borrar logs de sesiones anteriores del mismo día
+        // append=true para preservar logs previos del mismo día
         writer = Files.newBufferedWriter(logFile,
                 java.nio.charset.StandardCharsets.UTF_8,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.APPEND);
 
-        writer.write("──────────────────────────────────────────");
+        writer.write("──────────────────────────────────────────────────────────────────────");
         writer.newLine();
-        writer.write("  Sesión iniciada: " + LocalTime.now().format(TIME_FMT));
+        writer.write("  Sesión iniciada: " + LocalDate.now() + " " + LocalTime.now().format(TIME_FMT));
         writer.newLine();
-        writer.write("──────────────────────────────────────────");
+        writer.write("──────────────────────────────────────────────────────────────────────");
         writer.newLine();
         writer.flush();
     }
 
     private synchronized void close() {
-        write("BOOT ", "Servidor detenido.");
+        write("BOOT ", "Servidor detenido.", false);
         closeQuietly();
     }
 
@@ -176,27 +194,45 @@ public class FileLogView implements IServerView {
         }
     }
 
-    // ── Resolución de la carpeta logs/ ────────────────────────
+    // ── Resolución inteligente de la carpeta logs/ ────────────
 
-    /**
-     * Resuelve la carpeta {@code logs/} en el mismo directorio que el JAR ejecutable.
-     * Si no se puede determinar (e.g. ejecutando desde IDE), usa el directorio de trabajo.
-     */
-    private static Path resolveLogsDir() {
-        try {
-            Path jarPath = Path.of(
-                FileLogView.class
-                    .getProtectionDomain()
-                    .getCodeSource()
-                    .getLocation()
-                    .toURI()
-            );
-            // Si es un .jar, sube al directorio que lo contiene
-            Path base = Files.isRegularFile(jarPath) ? jarPath.getParent() : jarPath;
-            return base.resolve("logs");
-        } catch (URISyntaxException | NullPointerException e) {
-            // Fallback: directorio de trabajo
-            return Path.of(System.getProperty("user.dir"), "logs");
+    public static Path resolveLogsDir() {
+        // 1. Variable de entorno
+        String envLogs = System.getenv("LOGS_DIR");
+        if (envLogs != null && !envLogs.isBlank()) {
+            Path p = Path.of(envLogs);
+            try { Files.createDirectories(p); return p.toAbsolutePath().normalize(); } catch (IOException ignored) {}
         }
+
+        // 2. Comprobar si existe la carpeta Weather_Server/logs
+        Path pWeatherServer = Path.of("Weather_Server", "logs");
+        if (Files.exists(pWeatherServer)) return pWeatherServer.toAbsolutePath().normalize();
+
+        // 3. Comprobar si existe logs/ local
+        Path pLocal = Path.of("logs");
+        if (Files.exists(pLocal)) return pLocal.toAbsolutePath().normalize();
+
+        // 4. Ubicación junto al CodeSource (JAR o bin)
+        try {
+            Path jarPath = Path.of(FileLogView.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+            Path base = Files.isRegularFile(jarPath) ? jarPath.getParent() : jarPath;
+            Path candidate = base.resolve("logs");
+            if (Files.exists(candidate)) return candidate.toAbsolutePath().normalize();
+
+            if (base.getParent() != null) {
+                Path cand2 = base.getParent().resolve("logs");
+                if (Files.exists(cand2)) return cand2.toAbsolutePath().normalize();
+
+                Path cand3 = base.getParent().resolve("Weather_Server").resolve("logs");
+                if (Files.exists(cand3)) return cand3.toAbsolutePath().normalize();
+            }
+        } catch (URISyntaxException | NullPointerException ignored) {}
+
+        // 5. Fallback por defecto preferente
+        Path fallback = Files.exists(Path.of("Weather_Server"))
+                ? Path.of("Weather_Server", "logs")
+                : Path.of("logs");
+        try { Files.createDirectories(fallback); } catch (IOException ignored) {}
+        return fallback.toAbsolutePath().normalize();
     }
 }

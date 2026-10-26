@@ -108,10 +108,16 @@ public class SensorData {
 
     /** Aplica una lectura de humedad reportada por el ESP32 para un slot dado. */
     public void pushPlantReading(int slot, String plantKey, float humidity) {
+        pushPlantReading(slot, plantKey, humidity, 0L);
+    }
+
+    /** Aplica una lectura completa de slot reportada por el ESP32/Simulador incluyendo último riego. */
+    public void pushPlantReading(int slot, String plantKey, float humidity, long lastWatered) {
         PlantSlot p = getPlant(slot);
         if (p == null) return;
         if (plantKey != null) p.setPlantKey(plantKey);
         p.setHumidity(humidity);
+        if (lastWatered > 0) p.setLastWatered(lastWatered);
     }
 
     // ── Canal de comandos hacia el ESP32 físico/simulado ─────

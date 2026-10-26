@@ -140,8 +140,12 @@ public final class XlsxReader {
         if ("s".equals(type)) {
             String idxStr = firstChildText(cellEl, "v");
             if (idxStr.isEmpty()) return "";
-            int idx = Integer.parseInt(idxStr);
-            return idx >= 0 && idx < sharedStrings.size() ? sharedStrings.get(idx) : "";
+            try {
+                int idx = Integer.parseInt(idxStr);
+                return idx >= 0 && idx < sharedStrings.size() ? sharedStrings.get(idx) : "";
+            } catch (Exception e) {
+                return "";
+            }
         }
         // Numérico, booleano u otro: devolver el valor crudo de <v>.
         return firstChildText(cellEl, "v");
